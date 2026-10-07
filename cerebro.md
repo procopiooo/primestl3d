@@ -5,6 +5,14 @@
 
 ---
 
+## Atualização de 07/10/2026
+
+- Adicionado o vídeo oficial de apresentação da PRIME STL (`Apresentação.mp4` / 4K Ultra HD, 2min 25s) posicionado estrategicamente logo após a primeira apresentação do site (Hero e barra de benefícios).
+- Player nativo HTML5 de alta performance com controles completos (`controls`, `playsinline`, `preload="metadata"`), moldura cinema escura com iluminação sutil e suporte responsivo a todos os dispositivos (desktop e mobile).
+- Compatibilidade multiplataforma com fallbacks de URL ASCII e UTF-8 (`apresentacao/apresentacao.mp4` e `apresentação/Apresentação.mp4`), servidos de forma estática sem sobrecarga.
+- Links de acesso rápido adicionados ao menu de navegação do cabeçalho e na chamada de ação principal do Hero ("Assistir à apresentação").
+- Adicionado na Área do Cliente (`/painel`) o **Pack de Agradecimento (Bônus Exclusivo)** para todos os compradores (Básico e Premium), com download direto do PDF (`PRIME STL Pack Agradecimento.pdf`) e link para a pasta de STL bônus no Google Drive, implementado 100% no frontend sem alterar o backend já consolidado.
+
 ## Atualização de 01/10/2026
 
 - Plano Básico: R$ 9,90, com 1.000 modelos STL.
@@ -23,9 +31,9 @@ Conforme diretriz estrita do projeto:
 - O layout visual, hierarquia de componentes e scripts interativos do arquivo `PRIME_STL.html` são preservados integralmente.
 - Todas as implementações de backend, integrações de APIs, banco de dados, regras de checkout, middlewares de segurança e serviços auxiliares devem se plugar de forma modular, respeitando as marcações semânticas e contratos de dados já expostos pelo HTML (ex.: atributos `data-plan`, `data-model`, seletores de modal e configurações `PRIME_CONFIG`).
 
-### 1.3. Domínio Canônico e Configurações de Rede
-- **Domínio de Produção:** `https://seusite.com.br/` (ou domínio configurado na Vercel)
-- **Protocolo Obrigatório:** HTTPS forçado (TLS 1.3) com cabeçalho HSTS ativo.
+### 1.3. Domínio Oficial e Configurações de Rede
+- **Domínio Canônico:** `https://www.primestl3d.com.br/`
+- **Protocolo Obrigatório:** HTTPS forçado (TLS 1.3). Qualquer tráfego recebido em `http://www.primestl3d.com.br/` ou `http://primestl3d.com.br/` deve responder com redirecionamento permanente HTTP 301 para `https://www.primestl3d.com.br/` com cabeçalho HSTS ativo. Isso é indispensável para evitar que navegadores exibam alertas de "Site Não Seguro" durante o processo de compra.
 
 ---
 

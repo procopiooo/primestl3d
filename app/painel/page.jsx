@@ -208,6 +208,57 @@ export default function PainelCliente() {
           </div>
         </section>
 
+        {/* Card de Bônus Especial: Pack de Agradecimento com Arquivos STL */}
+        <section className="bg-gradient-to-br from-amber-500/[0.08] via-amber-500/[0.03] to-white border border-amber-300/80 rounded-2xl p-6 sm:p-8 shadow-[0_4px_24px_rgba(245,158,11,0.08)] relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-56 h-56 bg-gradient-to-bl from-amber-400/20 to-transparent rounded-full blur-3xl pointer-events-none" />
+
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-xl bg-amber-100 border border-amber-200 text-amber-700 flex items-center justify-center text-2xl shrink-0 shadow-sm">
+                🎁
+              </div>
+              <div>
+                <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                  <span className="text-[11px] font-bold text-amber-900 uppercase tracking-wider bg-amber-100 border border-amber-300 px-2.5 py-0.5 rounded-full">
+                    Bônus Especial de Agradecimento
+                  </span>
+                  <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                    Liberado para Todos os Clientes
+                  </span>
+                </div>
+                <h2 className="text-xl font-bold text-[#101820] tracking-tight mb-1.5">
+                  Pack de Arquivos STL Bônus & Guia de Agradecimento
+                </h2>
+                <p className="text-sm text-[#475569] leading-relaxed max-w-xl">
+                  Um presente especial da nossa equipe para a sua jornada na impressão 3D! Baixe o PDF do Pack de Agradecimento ou abra diretamente a pasta do Google Drive com modelos STL adicionais.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row lg:flex-col gap-3 shrink-0 w-full lg:w-auto">
+              <a
+                href="/downloads/PRIME-STL-Pack-Agradecimento.pdf"
+                download="PRIME STL Pack Agradecimento.pdf"
+                className="inline-flex items-center justify-center gap-2 py-3.5 px-6 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold text-sm transition-all shadow-md shadow-amber-500/20 hover:scale-[1.01] cursor-pointer"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                </svg>
+                <span>Baixar PDF Bônus</span>
+              </a>
+
+              <a
+                href="https://drive.google.com/drive/folders/17E4py6gcf3XXsnSlfCaTkc4VoL8tuf3y"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-2 py-3 px-5 rounded-xl bg-white hover:bg-slate-50 text-[#101820] border border-[#dfe4e9] font-semibold text-xs sm:text-sm transition-colors shadow-sm cursor-pointer"
+              >
+                <span>Acessar Pasta STL no Drive ↗</span>
+              </a>
+            </div>
+          </div>
+        </section>
+
         {/* Como Utilizar em 3 Passos */}
         <section className="grid grid-cols-1 md:grid-cols-3 gap-5">
           <div className="bg-white border border-[#dfe4e9] rounded-xl p-5 shadow-sm space-y-1.5">
@@ -321,18 +372,29 @@ export default function PainelCliente() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <span className="text-xs font-semibold text-[#007fff] uppercase tracking-wider block mb-1">
-                Ambiente de Demonstração
+                Atendimento
               </span>
-              <h3 className="text-lg font-bold text-[#101820]">Área do Membro VIP</h3>
+              <h3 className="text-lg font-bold text-[#101820]">Canais Oficiais de Suporte</h3>
               <p className="text-xs text-[#66717d] mt-0.5">
-                Acesso aos modelos 3D, guias em PDF e pastas organizadas na nuvem.
+                Dúvidas sobre seus arquivos ou ajuda com a biblioteca? Entre em contato:
               </p>
             </div>
-            <div>
-              <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-semibold">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                Status: Acesso Liberado
-              </span>
+
+            <div className="flex flex-wrap items-center gap-3">
+              <a
+                href="https://www.instagram.com/primestl3d/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#f7f8fa] hover:bg-slate-100 text-[#101820] border border-[#dfe4e9] text-xs font-semibold transition-colors"
+              >
+                <span>Instagram: @primestl3d ↗</span>
+              </a>
+              <a
+                href="mailto:primestl3doficial@gmail.com"
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-[#007fff] border border-blue-200 text-xs font-semibold transition-colors"
+              >
+                <span>✉ primestl3doficial@gmail.com</span>
+              </a>
             </div>
           </div>
         </section>

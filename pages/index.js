@@ -25,4 +25,3 @@ export async function getServerSideProps({ res }) {
 export default function HomePage() {
   return null;
 }
-
