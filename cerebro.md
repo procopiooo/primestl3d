@@ -13,6 +13,9 @@
 - Links de acesso rápido adicionados ao menu de navegação do cabeçalho e na chamada de ação principal do Hero ("Assistir à apresentação").
 - Adicionado na Área do Cliente (`/painel`) o **Pack de Agradecimento (Bônus Exclusivo)** para todos os compradores (Básico e Premium), com download direto do PDF (`PRIME STL Pack Agradecimento.pdf`) e link para a pasta de STL bônus no Google Drive, implementado 100% no frontend sem alterar o backend já consolidado.
 - Resolvido o erro de build da Vercel (`ENOENT: /vercel/path0/apresentacao`) através da remoção de junções NTFS de ambiente local Windows, padronização do diretório estático `public/apresentacao` e arquitetura híbrida de streaming `pages/index.js` + App Router. Deploy de produção ativo e validado em `https://www.primestl3d.com.br/`.
+- Adicionada a seção de destaque sazonal **Coleção Especial Natal & Páscoa** logo após o vídeo de apresentação com o banner oficial `natalapres.jfif` (+300 arquivos STL temáticos, licença comercial e alta resolução).
+- Adicionada a nova aba/filtro **Natal** no catálogo "Seu próximo produto pode estar aqui" com 5 modelos temáticos exclusivos (`natal1.png`, `natal2.png`, `natal3.png`, `natal4.png`, `natal5.jpeg`).
+- Adicionados 2 novos modelos à categoria **Personagens**: Fantasma Ghostface Cômico (`personagem1.png`) e Luffy Amigurumi (`personagem2.webp`).
 
 ## Atualização de 01/10/2026
 
