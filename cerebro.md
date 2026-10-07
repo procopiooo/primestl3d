@@ -12,6 +12,7 @@
 - Compatibilidade multiplataforma com fallbacks de URL ASCII e UTF-8 (`apresentacao/apresentacao.mp4` e `apresentação/Apresentação.mp4`), servidos de forma estática sem sobrecarga.
 - Links de acesso rápido adicionados ao menu de navegação do cabeçalho e na chamada de ação principal do Hero ("Assistir à apresentação").
 - Adicionado na Área do Cliente (`/painel`) o **Pack de Agradecimento (Bônus Exclusivo)** para todos os compradores (Básico e Premium), com download direto do PDF (`PRIME STL Pack Agradecimento.pdf`) e link para a pasta de STL bônus no Google Drive, implementado 100% no frontend sem alterar o backend já consolidado.
+- Resolvido o erro de build da Vercel (`ENOENT: /vercel/path0/apresentacao`) através da remoção de junções NTFS de ambiente local Windows, padronização do diretório estático `public/apresentacao` e arquitetura híbrida de streaming `pages/index.js` + App Router. Deploy de produção ativo e validado em `https://www.primestl3d.com.br/`.
 
 ## Atualização de 01/10/2026
 
