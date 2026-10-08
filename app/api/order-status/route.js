@@ -3,6 +3,7 @@ import path from 'path';
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { syncPaymentStatus } from '@/lib/paymentSync';
+import { verifySessionToken } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,24 +12,67 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const orderId = searchParams.get('orderId');
     const paymentId = searchParams.get('paymentId') || searchParams.get('payment_id') || searchParams.get('collection_id');
-    const urlStatus = searchParams.get('status') || searchParams.get('collection_status');
 
-    let plan = searchParams.get('plan') || 'basic';
-    let status = urlStatus || 'approved';
+    let isAuthorized = false;
+    let plan = 'basic';
+    let status = 'pending';
 
-    const isDemo = searchParams.get('demo') === 'true' || (orderId && orderId.startsWith('DEMO-'));
-    if (isDemo) {
-      status = 'approved';
-    } else if (orderId || paymentId) {
-      // Se temos orderId ou paymentId, sincroniza ativamente com o Mercado Pago e Supabase
-      const syncRes = await syncPaymentStatus({ orderId, paymentId });
-      if (syncRes.approved) {
-        status = 'approved';
-        if (syncRes.plan) plan = syncRes.plan;
+    // 1. Verificação via Cookie de Sessão de Membro autenticado
+    const sessionCookie = request.cookies.get('prime_session')?.value;
+    if (sessionCookie) {
+      const session = verifySessionToken(sessionCookie);
+      if (session?.telefone) {
+        const { data: cliente } = await supabaseAdmin
+          .from('clientes')
+          .select('plano, status_pagamento')
+          .eq('telefone', session.telefone)
+          .single();
+
+        if (cliente && cliente.status_pagamento === 'approved') {
+          isAuthorized = true;
+          status = 'approved';
+          plan = cliente.plano || 'basic';
+        }
       }
     }
 
-    // Carrega os links do Google Drive de lib/driveLinks.json
+    // 2. Verificação via Pedido/Pagamento aprovado (ex: retorno da tela /sucesso)
+    if (orderId || paymentId) {
+      if (orderId) {
+        const { data: order } = await supabaseAdmin
+          .from('pedidos')
+          .select('id, status, items, amount')
+          .eq('id', orderId)
+          .single();
+
+        if (order && order.status === 'approved') {
+          isAuthorized = true;
+          status = 'approved';
+          const itemId = order.items?.[0]?.id;
+          plan = itemId === 'premium' || order.amount > 20 ? 'premium' : 'basic';
+        }
+      }
+
+      // Se ainda não estava aprovado no banco, sincroniza ativamente com o Mercado Pago
+      if (!isAuthorized) {
+        const syncRes = await syncPaymentStatus({ orderId, paymentId });
+        if (syncRes.approved) {
+          isAuthorized = true;
+          status = 'approved';
+          plan = syncRes.plan || 'basic';
+        }
+      }
+    }
+
+    // Se não for uma requisição autorizada ou com pagamento aprovado, bloqueia o acesso
+    if (!isAuthorized) {
+      return NextResponse.json(
+        { error: 'Acesso não autorizado ou pedido não aprovado.' },
+        { status: 401 }
+      );
+    }
+
+    // Carrega links do Google Drive de forma segura (somente após autorização)
     let driveLinks = {
       basic: 'https://drive.google.com/drive/folders/COLE_AQUI_SEU_LINK_DO_DRIVE_BASICO',
       premium: 'https://drive.google.com/drive/folders/COLE_AQUI_SEU_LINK_DO_DRIVE_PREMIUM',
@@ -45,25 +89,6 @@ export async function GET(request) {
       // fallback
     }
 
-    // Se tiver orderId, consulta no Supabase para saber exatamente qual foi o plano comprado
-    if (orderId) {
-      const { data: order } = await supabaseAdmin
-        .from('pedidos')
-        .select('id, status, items, amount')
-        .eq('id', orderId)
-        .single();
-
-      if (order) {
-        if (order.status === 'approved') status = 'approved';
-        const itemId = order.items?.[0]?.id;
-        if (itemId === 'premium' || order.amount > 20) {
-          plan = 'premium';
-        } else {
-          plan = 'basic';
-        }
-      }
-    }
-
     const driveUrl = plan === 'premium' ? driveLinks.premium : driveLinks.basic;
     const pdfFileName = plan === 'premium' ? 'PRIME STL Premium.pdf' : 'PRIME STL Básico.pdf';
 
@@ -71,14 +96,14 @@ export async function GET(request) {
       plan,
       status,
       pdfFileName,
-      downloadUrl: `/api/download?plan=${plan}${isDemo ? '&demo=true' : ''}${orderId ? `&orderId=${encodeURIComponent(orderId)}` : ''}${paymentId ? `&paymentId=${encodeURIComponent(paymentId)}` : ''}`,
+      downloadUrl: `/api/download?plan=${plan}${orderId ? `&orderId=${encodeURIComponent(orderId)}` : ''}${paymentId ? `&paymentId=${encodeURIComponent(paymentId)}` : ''}`,
       driveUrl,
     });
   } catch (error) {
     console.error('[ORDER_STATUS] Erro:', error);
     return NextResponse.json(
-      { plan: 'basic', downloadUrl: '/api/download?plan=basic' },
-      { status: 200 }
+      { error: 'Erro ao consultar status do pedido.' },
+      { status: 500 }
     );
   }
 }

@@ -123,24 +123,7 @@ export async function POST(request) {
             })
             .eq('telefone', customerPhone);
         } else {
-          const { data: latestPending } = await supabaseAdmin
-            .from('clientes')
-            .select('id')
-            .eq('status_pagamento', 'pending')
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .maybeSingle();
-
-          if (latestPending?.id) {
-            await supabaseAdmin
-              .from('clientes')
-              .update({
-                status_pagamento: 'approved',
-                plano: planoComprado,
-                updated_at: new Date().toISOString(),
-              })
-              .eq('id', latestPending.id);
-          }
+          console.warn(`[WEBHOOK] Telefone não localizado para aprovação do cliente no pedido ${orderId}.`);
         }
       }
 

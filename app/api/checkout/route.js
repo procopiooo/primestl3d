@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
 import { Preference } from 'mercadopago';
-import { mpClient, isMercadoPagoConfigured } from '@/lib/mercadopago';
-import { supabaseAdmin, isSupabaseConfigured } from '@/lib/supabase';
+import { mpClient } from '@/lib/mercadopago';
+import { supabaseAdmin } from '@/lib/supabase';
 import { hashPassword } from '@/lib/auth';
+import { checkRateLimit } from '@/lib/rateLimit';
 
 // Tabela de preços canônica do servidor para evitar adulteração de preço no frontend (Price Tampering)
 const PREDEFINED_PLANS = {
@@ -18,6 +19,24 @@ const PREDEFINED_PLANS = {
 
 export async function POST(request) {
   try {
+    const ip =
+      request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+      request.headers.get('x-real-ip') ||
+      'unknown';
+
+    const rateLimit = checkRateLimit(`checkout:${ip}`, 10, 60 * 1000);
+    if (!rateLimit.success) {
+      return NextResponse.json(
+        { error: `Muitas tentativas. Aguarde ${rateLimit.resetInSeconds} segundos antes de tentar novamente.` },
+        {
+          status: 429,
+          headers: {
+            'Retry-After': String(rateLimit.resetInSeconds),
+          },
+        }
+      );
+    }
+
     const body = await request.json();
     const { planId, items: rawItems, payer } = body;
 
@@ -92,18 +111,7 @@ export async function POST(request) {
       }
     }
 
-    // 4. Modo Demonstração / Apresentação de Portfólio
-    if (!isMercadoPagoConfigured || !isSupabaseConfigured) {
-      console.log('[CHECKOUT] Modo Apresentação: gerando checkout demonstrativo.');
-      const demoOrderId = 'DEMO-' + Date.now();
-      return NextResponse.json({
-        order_id: demoOrderId,
-        init_point: `${baseUrl}/sucesso?plan=${planId || 'premium'}&demo=true&orderId=${demoOrderId}${telefoneLimpo ? `&phone=${telefoneLimpo}` : ''}`,
-        isDemo: true,
-      });
-    }
-
-    // 5. Registra o pedido inicial com status 'pending' no Supabase
+    // 4. Registra o pedido inicial com status 'pending' no Supabase
     const orderPayload = {
       status: 'pending',
       amount: totalAmount,
@@ -132,57 +140,68 @@ export async function POST(request) {
       orderError = fallbackAttempt.error;
     }
 
-    const orderId = newOrder?.id || 'DEMO-' + Date.now();
+    if (orderError || !newOrder) {
+      console.error('[CHECKOUT] Erro ao gravar pedido no Supabase:', orderError);
+      return NextResponse.json(
+        {
+          error: `Falha ao registrar pedido na base de dados: ${orderError?.message || 'Erro desconhecido'}`,
+          code: orderError?.code,
+          details: orderError?.details,
+        },
+        { status: 500 }
+      );
+    }
+
+    const orderId = newOrder.id;
+
     const isHttps = baseUrl.startsWith('https://');
 
-    // 6. Cria a Preferência no Mercado Pago via SDK Oficial
-    try {
-      const preference = new Preference(mpClient);
-      const preferenceData = {
-        items: itemsToProcess,
-        payer: {
-          name: payer?.name || undefined,
-          email: payer?.email || undefined,
-        },
-        metadata: {
-          telefone: telefoneLimpo,
-          plan_id: planId || 'basic',
-          payer_name: payer?.name || 'Cliente',
-        },
-        back_urls: {
-          success: `${baseUrl}/sucesso?plan=${planId || 'premium'}${telefoneLimpo ? `&phone=${telefoneLimpo}` : ''}`,
-          failure: `${baseUrl}/falha`,
-          pending: `${baseUrl}/pendente`,
-        },
-        ...(isHttps && { auto_return: 'approved' }),
-        ...(isHttps && { notification_url: `${baseUrl}/api/webhook` }),
-        external_reference: String(orderId),
-        statement_descriptor: 'PRIME STL',
-      };
+    // Cria a Preferência no Mercado Pago via SDK Oficial
+    const preference = new Preference(mpClient);
 
-      const mpResponse = await preference.create({ body: preferenceData });
+    const preferenceData = {
+      items: itemsToProcess,
+      payer: {
+        name: payer?.name || undefined,
+        email: payer?.email || undefined,
+      },
+      metadata: {
+        telefone: telefoneLimpo,
+        plan_id: planId || 'basic',
+        payer_name: payer?.name || 'Cliente',
+      },
+      back_urls: {
+        success: `${baseUrl}/sucesso?plan=${planId || 'premium'}`,
+        success: `${baseUrl}/sucesso?plan=${planId || 'premium'}${telefoneLimpo ? `&phone=${telefoneLimpo}` : ''}`,
+        failure: `${baseUrl}/falha`,
+        pending: `${baseUrl}/pendente`,
+      },
+      // auto_return exige HTTPS válido segundo a API do Mercado Pago
+      ...(isHttps && { auto_return: 'approved' }),
+      // notification_url só pode ser chamada se for URL pública
+      ...(isHttps && { notification_url: `${baseUrl}/api/webhook` }),
+      // Amarração segura: o ID do Supabase é a referência externa no Mercado Pago
+      external_reference: String(orderId),
+      statement_descriptor: 'PRIME STL',
+    };
 
-      if (newOrder?.id) {
-        await supabaseAdmin
-          .from('pedidos')
-          .update({ preference_id: mpResponse.id })
-          .eq('id', orderId);
-      }
+    const mpResponse = await preference.create({ body: preferenceData });
 
-      return NextResponse.json({
-        order_id: orderId,
+    // 5. Atualiza o pedido com o preference_id do Mercado Pago
+    await supabaseAdmin
+      .from('pedidos')
+      .update({
         preference_id: mpResponse.id,
-        init_point: mpResponse.init_point,
-        sandbox_init_point: mpResponse.sandbox_init_point,
-      });
-    } catch (mpError) {
-      console.warn('[CHECKOUT] Erro na API Mercado Pago. Redirecionando para demonstração:', mpError.message);
-      return NextResponse.json({
-        order_id: orderId,
-        init_point: `${baseUrl}/sucesso?plan=${planId || 'premium'}&demo=true&orderId=${orderId}${telefoneLimpo ? `&phone=${telefoneLimpo}` : ''}`,
-        isDemo: true,
-      });
-    }
+      })
+      .eq('id', orderId);
+
+    // 6. Retorna a URL de pagamento (init_point) para redirecionamento no frontend
+    return NextResponse.json({
+      order_id: orderId,
+      preference_id: mpResponse.id,
+      init_point: mpResponse.init_point,
+      sandbox_init_point: mpResponse.sandbox_init_point,
+    });
   } catch (error) {
     console.error('[CHECKOUT] Exceção inesperada na rota de checkout:', error);
     return NextResponse.json(
